@@ -1,6 +1,6 @@
 const INITIAL_CASH = 1_000_000;
 const TOTAL_ROUNDS = 100;
-const PRE_BARS = 120; // MA60 + buffer
+const PRE_BARS = 60; // MA60 最少需求，讓短歷史股也能從中間開局
 const FEE_RATE = 0.001425;
 const TAX_RATE = 0.003;
 
