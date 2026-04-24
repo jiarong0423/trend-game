@@ -2,12 +2,15 @@
 const LS_MUTE = "trendgame_mute";
 
 let ctx = null;
+let unlocked = false;
 let muted = localStorage.getItem(LS_MUTE) === "1";
 
 function ensureCtx() {
   if (!ctx) {
     try {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
     } catch (e) {
       return null;
     }
@@ -15,6 +18,38 @@ function ensureCtx() {
   if (ctx.state === "suspended") ctx.resume();
   return ctx;
 }
+
+// iOS/Android 音訊解鎖：第一次使用者互動時播一個無聲 buffer
+function unlockAudio() {
+  if (unlocked) return;
+  const c = ensureCtx();
+  if (!c) return;
+  try {
+    const buf = c.createBuffer(1, 1, 22050);
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    src.connect(c.destination);
+    src.start(0);
+    unlocked = true;
+  } catch (e) {}
+}
+
+// 綁定所有可能的第一次互動事件
+function setupUnlock() {
+  const events = ["touchstart", "touchend", "mousedown", "click", "keydown"];
+  const handler = () => {
+    unlockAudio();
+    if (ctx && ctx.state === "running") {
+      events.forEach((ev) =>
+        document.removeEventListener(ev, handler, true)
+      );
+    }
+  };
+  events.forEach((ev) =>
+    document.addEventListener(ev, handler, { capture: true, passive: true })
+  );
+}
+setupUnlock();
 
 function isMuted() { return muted; }
 function setMuted(v) {
