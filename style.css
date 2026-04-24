@@ -297,6 +297,7 @@ header {
   padding: 10px 20px;
   border-bottom: 1px solid var(--border);
   background: var(--panel);
+  white-space: nowrap;
 }
 
 header h1 {
@@ -305,6 +306,8 @@ header h1 {
   color: var(--cyber-cyan);
   letter-spacing: 2px;
   text-shadow: 0 0 8px rgba(0, 255, 240, 0.5);
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .meta {
@@ -512,44 +515,55 @@ main {
   .rs-val.big-val { font-size: 18px; }
   .verdict { font-size: 14px; letter-spacing: 2px; }
 
-  /* ========== header 重排成兩列 ========== */
+  /* ========== header 改 grid 兩列排版 ========== */
   header {
-    flex-wrap: wrap;
+    display: grid !important;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "title meta"
+      "controls controls";
     gap: 6px 10px;
     padding: 8px 10px;
-    align-items: center;
+    white-space: nowrap;
   }
   header h1 {
+    grid-area: title;
     font-size: 13px;
     letter-spacing: 1px;
-    white-space: nowrap;
-    flex: 0 0 auto;
+    white-space: nowrap !important;
   }
   .meta {
+    grid-area: meta;
     font-size: 11px;
-    gap: 10px;
-    flex-wrap: nowrap;
-    white-space: nowrap;
-    overflow: hidden;
-    flex: 1 1 auto;
+    gap: 8px;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    overflow-x: auto;
     min-width: 0;
+    justify-content: flex-end;
   }
-  .meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meta span {
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+  }
 
   .controls {
-    margin-left: 0;
-    gap: 4px;
+    grid-area: controls;
+    display: flex;
     flex-wrap: wrap;
-    width: 100%;
-    order: 3;
+    gap: 6px;
+    margin-left: 0;
     justify-content: flex-end;
   }
   .controls button {
     padding: 6px 10px;
     font-size: 11px;
-    white-space: nowrap;
+    white-space: nowrap !important;
+    flex: 0 0 auto;
   }
-  .who { font-size: 11px; margin-right: 4px; white-space: nowrap; }
+  .who { font-size: 11px; margin-right: 4px; white-space: nowrap !important; }
 
   /* ========== 主畫面改直式 ========== */
   main {
