@@ -270,6 +270,16 @@ function finish() {
   const startPrice = state.prices[state.startIdx].c;
   const bench = ((price - startPrice) / startPrice) * 100;
 
+  saveResult({
+    date: new Date().toISOString(),
+    stock: `${state.stock.id} ${state.stock.name}`,
+    from: state.prices[state.startIdx].t,
+    to: nowDate(),
+    equity: Math.round(equity),
+    roi: +roi.toFixed(2),
+    bench: +bench.toFixed(2),
+  });
+
   setTimeout(() => {
     alert(
       `遊戲結束\n\n` +
@@ -281,6 +291,84 @@ function finish() {
         `超越 ${(roi - bench >= 0 ? "+" : "")}${(roi - bench).toFixed(2)}%`
     );
   }, 100);
+}
+
+// ================= Player / localStorage =================
+const LS_NICK = "trendgame_nick";
+const LS_HIST = "trendgame_history";
+
+function getNick() { return localStorage.getItem(LS_NICK) || ""; }
+function setNick(n) { localStorage.setItem(LS_NICK, n); }
+function clearNick() { localStorage.removeItem(LS_NICK); }
+
+function getHistory(nick) {
+  const all = JSON.parse(localStorage.getItem(LS_HIST) || "{}");
+  return all[nick] || [];
+}
+function saveResult(r) {
+  const nick = getNick();
+  if (!nick) return;
+  const all = JSON.parse(localStorage.getItem(LS_HIST) || "{}");
+  if (!all[nick]) all[nick] = [];
+  all[nick].push(r);
+  if (all[nick].length > 200) all[nick] = all[nick].slice(-200);
+  localStorage.setItem(LS_HIST, JSON.stringify(all));
+}
+
+function calcStats(hist) {
+  if (!hist.length) return { games: 0, best: null, avg: null, win: null };
+  const rois = hist.map((h) => h.roi);
+  const best = Math.max(...rois);
+  const avg = rois.reduce((a, b) => a + b, 0) / rois.length;
+  const wins = hist.filter((h) => h.roi > h.bench).length;
+  return {
+    games: hist.length,
+    best,
+    avg,
+    win: (wins / hist.length) * 100,
+  };
+}
+
+function renderLogin() {
+  const nick = getNick();
+  const retBox = document.getElementById("returning-box");
+  const newBox = document.getElementById("newuser-box");
+  if (nick) {
+    retBox.classList.remove("hidden");
+    newBox.classList.add("hidden");
+    document.getElementById("welcomeName").textContent = nick;
+    const s = calcStats(getHistory(nick));
+    document.getElementById("statGames").textContent = s.games;
+    document.getElementById("statBest").textContent =
+      s.best === null ? "—" : `${s.best >= 0 ? "+" : ""}${s.best.toFixed(1)}%`;
+    document.getElementById("statAvg").textContent =
+      s.avg === null ? "—" : `${s.avg >= 0 ? "+" : ""}${s.avg.toFixed(1)}%`;
+    document.getElementById("statWin").textContent =
+      s.win === null ? "—" : `${s.win.toFixed(0)}%`;
+  } else {
+    retBox.classList.add("hidden");
+    newBox.classList.remove("hidden");
+    document.getElementById("nickInput").value = "";
+    setTimeout(() => document.getElementById("nickInput").focus(), 50);
+  }
+}
+
+async function enterGame() {
+  document.getElementById("login-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.remove("hidden");
+  document.getElementById("whoLabel").textContent = getNick();
+  if (!chart) {
+    setupChart();
+    await loadCatalog();
+  }
+  await newGame();
+}
+
+function logout() {
+  clearNick();
+  document.getElementById("game-screen").classList.add("hidden");
+  document.getElementById("login-screen").classList.remove("hidden");
+  renderLogin();
 }
 
 async function newGame() {
@@ -315,8 +403,36 @@ document.getElementById("btnBuy").addEventListener("click", buy);
 document.getElementById("btnSell").addEventListener("click", sell);
 document.getElementById("btnNext").addEventListener("click", nextDay);
 document.getElementById("btnNew").addEventListener("click", newGame);
+document.getElementById("btnBack").addEventListener("click", () => {
+  if (state.pos > 0 && !state.over) {
+    if (!confirm("你還有持股，確定要登出?")) return;
+  }
+  logout();
+});
+
+document.getElementById("btnLogin").addEventListener("click", () => {
+  const v = document.getElementById("nickInput").value.trim();
+  if (!v) {
+    const inp = document.getElementById("nickInput");
+    inp.style.animation = "none";
+    setTimeout(() => { inp.style.animation = ""; inp.focus(); }, 10);
+    return;
+  }
+  setNick(v);
+  enterGame();
+});
+document.getElementById("nickInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("btnLogin").click();
+});
+document.getElementById("btnEnter").addEventListener("click", enterGame);
+document.getElementById("btnLogout").addEventListener("click", () => {
+  clearNick();
+  renderLogin();
+});
+
 document.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT") return;
+  if (document.getElementById("game-screen").classList.contains("hidden")) return;
   if (e.code === "Space") {
     e.preventDefault();
     nextDay();
@@ -327,8 +443,6 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-(async function init() {
-  setupChart();
-  await loadCatalog();
-  await newGame();
+(function init() {
+  renderLogin();
 })();

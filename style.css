@@ -9,6 +9,10 @@
   --buy: #e05252;
   --sell: #3fb950;
   --accent: #5a9cf8;
+  --cyber-cyan: #00fff0;
+  --cyber-magenta: #ff00d4;
+  --cyber-purple: #b026ff;
+  --cyber-yellow: #f6ff00;
 }
 
 html, body {
@@ -19,6 +23,273 @@ html, body {
   overflow: hidden;
 }
 
+.hidden { display: none !important; }
+
+/* ========== CYBERPUNK LOGIN ========== */
+.cyber-screen {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(176, 38, 255, 0.25), transparent 55%),
+    radial-gradient(ellipse at 70% 80%, rgba(0, 255, 240, 0.18), transparent 55%),
+    linear-gradient(180deg, #0a0014 0%, #12002a 50%, #000010 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 100;
+}
+
+/* 網格背景 */
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 255, 240, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 240, 0.08) 1px, transparent 1px);
+  background-size: 50px 50px;
+  transform: perspective(800px) rotateX(55deg);
+  transform-origin: center bottom;
+  animation: gridMove 10s linear infinite;
+  opacity: 0.6;
+}
+@keyframes gridMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 50px; }
+}
+
+/* 掃描線 */
+.scanline {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(0, 255, 240, 0.03) 50%
+  );
+  background-size: 100% 4px;
+  animation: scan 8s linear infinite;
+}
+@keyframes scan {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+/* 四角裝飾 */
+.corner {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--cyber-cyan);
+  filter: drop-shadow(0 0 6px var(--cyber-cyan));
+}
+.tl { top: 20px; left: 20px; border-right: 0; border-bottom: 0; }
+.tr { top: 20px; right: 20px; border-left: 0; border-bottom: 0; }
+.bl { bottom: 20px; left: 20px; border-right: 0; border-top: 0; }
+.br { bottom: 20px; right: 20px; border-left: 0; border-top: 0; }
+
+/* 主卡片 */
+.cyber-card {
+  position: relative;
+  background: rgba(10, 0, 20, 0.85);
+  border: 1px solid var(--cyber-magenta);
+  padding: 44px 48px;
+  min-width: 420px;
+  box-shadow:
+    0 0 40px rgba(255, 0, 212, 0.3),
+    0 0 80px rgba(176, 38, 255, 0.15),
+    inset 0 0 40px rgba(176, 38, 255, 0.05);
+  backdrop-filter: blur(8px);
+  clip-path: polygon(
+    0 10px, 10px 0,
+    calc(100% - 20px) 0, 100% 20px,
+    100% calc(100% - 10px), calc(100% - 10px) 100%,
+    20px 100%, 0 calc(100% - 20px)
+  );
+}
+
+/* Glitch 標題 */
+.cyber-glitch {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 42px;
+  letter-spacing: 4px;
+  color: var(--cyber-cyan);
+  text-shadow:
+    0 0 10px var(--cyber-cyan),
+    0 0 20px var(--cyber-cyan),
+    0 0 40px rgba(0, 255, 240, 0.5);
+  position: relative;
+  text-align: center;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.cyber-glitch::before,
+.cyber-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+.cyber-glitch::before {
+  color: var(--cyber-magenta);
+  animation: glitch1 3s infinite;
+  clip-path: inset(0 0 60% 0);
+}
+.cyber-glitch::after {
+  color: var(--cyber-cyan);
+  animation: glitch2 3s infinite;
+  clip-path: inset(60% 0 0 0);
+}
+@keyframes glitch1 {
+  0%, 90%, 100% { transform: translate(0); }
+  92% { transform: translate(-2px, -1px); }
+  94% { transform: translate(2px, 1px); }
+  96% { transform: translate(-1px, 2px); }
+}
+@keyframes glitch2 {
+  0%, 90%, 100% { transform: translate(0); }
+  92% { transform: translate(2px, 1px); }
+  94% { transform: translate(-2px, -1px); }
+  96% { transform: translate(1px, -2px); }
+}
+
+.cyber-sub {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--cyber-purple);
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-align: center;
+  margin-bottom: 36px;
+  text-shadow: 0 0 8px var(--cyber-purple);
+}
+
+/* 輸入框 */
+.field-label {
+  display: block;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--cyber-cyan);
+  font-size: 12px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  text-shadow: 0 0 4px var(--cyber-cyan);
+}
+#nickInput {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--cyber-cyan);
+  color: var(--cyber-cyan);
+  padding: 14px 16px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 18px;
+  letter-spacing: 3px;
+  outline: none;
+  box-shadow: 0 0 12px rgba(0, 255, 240, 0.2), inset 0 0 12px rgba(0, 255, 240, 0.05);
+  transition: all 0.2s;
+}
+#nickInput:focus {
+  border-color: var(--cyber-magenta);
+  box-shadow: 0 0 18px rgba(255, 0, 212, 0.5), inset 0 0 12px rgba(255, 0, 212, 0.1);
+  color: var(--cyber-magenta);
+}
+#nickInput::placeholder { color: rgba(0, 255, 240, 0.3); }
+
+/* Cyber 按鈕 */
+.cyber-btn {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  background: linear-gradient(135deg, var(--cyber-magenta) 0%, var(--cyber-purple) 100%);
+  border: 0;
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 4px;
+  padding: 14px 20px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  clip-path: polygon(
+    8px 0, 100% 0, 100% calc(100% - 8px),
+    calc(100% - 8px) 100%, 0 100%, 0 8px
+  );
+  box-shadow: 0 0 20px rgba(255, 0, 212, 0.4);
+}
+.cyber-btn.big { padding: 16px 20px; font-size: 16px; }
+.cyber-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 30px rgba(255, 0, 212, 0.7), 0 0 50px rgba(176, 38, 255, 0.4);
+  filter: brightness(1.2);
+}
+.cyber-btn.ghost {
+  background: transparent;
+  border: 1px solid var(--cyber-cyan);
+  color: var(--cyber-cyan);
+  box-shadow: 0 0 10px rgba(0, 255, 240, 0.2);
+}
+.cyber-btn.ghost:hover {
+  background: rgba(0, 255, 240, 0.1);
+  box-shadow: 0 0 20px rgba(0, 255, 240, 0.5);
+}
+
+.hint {
+  margin-top: 16px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+/* Returning player */
+.welcome-back {
+  text-align: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+.neon-cyan {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--cyber-cyan);
+  text-shadow: 0 0 12px var(--cyber-cyan), 0 0 24px rgba(0, 255, 240, 0.4);
+  letter-spacing: 2px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.stats-grid > div {
+  background: rgba(0, 255, 240, 0.04);
+  border: 1px solid rgba(0, 255, 240, 0.2);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Share Tech Mono', monospace;
+}
+.stat-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.stat-val {
+  color: var(--cyber-cyan);
+  font-weight: 700;
+  font-size: 14px;
+  text-shadow: 0 0 6px var(--cyber-cyan);
+}
+
+/* ========== GAME SCREEN ========== */
 header {
   display: flex;
   align-items: center;
@@ -28,7 +299,13 @@ header {
   background: var(--panel);
 }
 
-header h1 { font-size: 16px; color: var(--accent); }
+header h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  color: var(--cyber-cyan);
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px rgba(0, 255, 240, 0.5);
+}
 
 .meta {
   display: flex;
@@ -38,7 +315,15 @@ header h1 { font-size: 16px; color: var(--accent); }
 }
 .meta b { color: var(--text); }
 
-.controls { margin-left: auto; display: flex; gap: 8px; }
+.controls { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.who {
+  font-size: 12px;
+  color: var(--cyber-cyan);
+  margin-right: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 1px;
+}
+.who b { color: var(--cyber-cyan); text-shadow: 0 0 6px var(--cyber-cyan); }
 
 button {
   background: var(--panel);
@@ -52,6 +337,12 @@ button {
 button:hover { border-color: var(--accent); }
 button.buy { background: var(--buy); border-color: var(--buy); color: white; font-weight: 600; }
 button.sell { background: var(--sell); border-color: var(--sell); color: white; font-weight: 600; }
+button.ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 0, 212, 0.4);
+  color: rgba(255, 0, 212, 0.8);
+}
+button.ghost:hover { border-color: var(--cyber-magenta); color: var(--cyber-magenta); }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 main {
