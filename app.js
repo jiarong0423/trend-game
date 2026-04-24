@@ -19,7 +19,7 @@ const state = {
   over: false,
 };
 
-let chart, candleSeries, volumeSeries, ma5Line, ma20Line, ma60Line;
+let chart, candleSeries, volumeSeries, ma5Line, ma20Line, ma60Line, bbUpper, bbLower;
 
 async function loadCatalog() {
   const r = await fetch("data/stocks.json");
@@ -40,6 +40,21 @@ function ma(arr, n, key = "c") {
     if (i >= n - 1) out.push({ time: arr[i].t, value: +(sum / n).toFixed(2) });
   }
   return out;
+}
+
+function bollinger(arr, n = 20, k = 2) {
+  const up = [], lo = [];
+  for (let i = n - 1; i < arr.length; i++) {
+    let sum = 0;
+    for (let j = i - n + 1; j <= i; j++) sum += arr[j].c;
+    const m = sum / n;
+    let sq = 0;
+    for (let j = i - n + 1; j <= i; j++) sq += (arr[j].c - m) ** 2;
+    const sd = Math.sqrt(sq / n);
+    up.push({ time: arr[i].t, value: +(m + k * sd).toFixed(2) });
+    lo.push({ time: arr[i].t, value: +(m - k * sd).toFixed(2) });
+  }
+  return { up, lo };
 }
 
 function toCandle(p) {
@@ -86,6 +101,8 @@ function setupChart() {
   ma5Line = chart.addLineSeries({ color: "#5a9cf8", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
   ma20Line = chart.addLineSeries({ color: "#f0b75c", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
   ma60Line = chart.addLineSeries({ color: "#b37cf0", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
+  bbUpper = chart.addLineSeries({ color: "rgba(180,180,180,0.5)", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
+  bbLower = chart.addLineSeries({ color: "rgba(180,180,180,0.5)", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
 
   window.addEventListener("resize", () => chart.applyOptions({}));
 }
@@ -97,6 +114,9 @@ function renderChart() {
   ma5Line.setData(ma(slice, 5));
   ma20Line.setData(ma(slice, 20));
   ma60Line.setData(ma(slice, 60));
+  const bb = bollinger(slice, 20, 2);
+  bbUpper.setData(bb.up);
+  bbLower.setData(bb.lo);
   chart.timeScale().fitContent();
 }
 
@@ -104,11 +124,14 @@ function appendBar() {
   const p = state.prices[state.cursor];
   candleSeries.update(toCandle(p));
   volumeSeries.update(toVol(p));
-  // refresh MAs (cheap for our sizes)
+  // refresh MAs + BB (cheap for our sizes)
   const slice = state.prices.slice(0, state.cursor + 1);
   ma5Line.setData(ma(slice, 5));
   ma20Line.setData(ma(slice, 20));
   ma60Line.setData(ma(slice, 60));
+  const bb = bollinger(slice, 20, 2);
+  bbUpper.setData(bb.up);
+  bbLower.setData(bb.lo);
 }
 
 function nowPrice() {
