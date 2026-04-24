@@ -52,7 +52,7 @@
 <header>
   <h1>趨勢回放</h1>
   <div class="meta">
-    <span id="stockLabel">—</span>
+    <span id="stockLabel">??? ???</span>
     <span id="dateLabel">—</span>
     <span>剩餘回合 <b id="roundsLeft">100</b></span>
   </div>
@@ -60,6 +60,7 @@
     <span class="who">👤 <b id="whoLabel">—</b></span>
     <button id="btnNew">新局</button>
     <button id="btnNext">下一步 (Space)</button>
+    <button id="btnEnd" class="ghost danger">結束遊戲</button>
     <button id="btnBack" class="ghost">登出</button>
   </div>
 </header>
@@ -107,6 +108,56 @@
     <ul id="log"></ul>
   </aside>
 </main>
+</div>
+
+<!-- ================= 結算頁 ================= -->
+<div id="result-screen" class="cyber-screen hidden">
+  <div class="scanline"></div>
+  <div class="grid-bg"></div>
+
+  <div class="cyber-card result-card">
+    <div id="resultTitle" class="cyber-glitch" data-text="MISSION COMPLETE">MISSION COMPLETE</div>
+    <div id="resultSub" class="cyber-sub">// 結算回報</div>
+
+    <div class="reveal-block">
+      <div class="reveal-label">個股代號</div>
+      <div id="revealStock" class="reveal-stock">—</div>
+      <div id="revealRange" class="reveal-range">—</div>
+    </div>
+
+    <div class="result-stats">
+      <div class="rs-row">
+        <span class="rs-label">最終總資產</span>
+        <span id="rsEquity" class="rs-val">—</span>
+      </div>
+      <div class="rs-row big-row">
+        <span class="rs-label">報酬率</span>
+        <span id="rsRoi" class="rs-val big-val">—</span>
+      </div>
+      <div class="rs-row">
+        <span class="rs-label">買入持有</span>
+        <span id="rsBench" class="rs-val">—</span>
+      </div>
+      <div class="rs-row big-row">
+        <span class="rs-label">超越基準</span>
+        <span id="rsAlpha" class="rs-val big-val">—</span>
+      </div>
+      <div class="rs-row">
+        <span class="rs-label">交易次數</span>
+        <span id="rsTrades" class="rs-val">—</span>
+      </div>
+    </div>
+
+    <div id="resultVerdict" class="verdict">—</div>
+
+    <button id="btnAgain" class="cyber-btn big">再來一局</button>
+    <button id="btnBackLogin" class="cyber-btn ghost">回首頁</button>
+  </div>
+
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
 </div>
 
 <script src="app.js"></script>

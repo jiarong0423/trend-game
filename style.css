@@ -343,6 +343,8 @@ button.ghost {
   color: rgba(255, 0, 212, 0.8);
 }
 button.ghost:hover { border-color: var(--cyber-magenta); color: var(--cyber-magenta); }
+button.danger { border-color: rgba(246, 255, 0, 0.4); color: rgba(246, 255, 0, 0.85); }
+button.danger:hover { border-color: var(--cyber-yellow); color: var(--cyber-yellow); text-shadow: 0 0 6px var(--cyber-yellow); }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 main {
@@ -400,3 +402,89 @@ main {
 
 .pos-pnl { color: var(--sell); }
 .neg-pnl { color: var(--buy); }
+
+/* ========== RESULT SCREEN ========== */
+.result-card {
+  min-width: 480px;
+  max-width: 560px;
+}
+.reveal-block {
+  text-align: center;
+  margin: 24px 0 20px;
+  padding: 20px;
+  background: rgba(0, 255, 240, 0.04);
+  border: 1px solid rgba(0, 255, 240, 0.25);
+  clip-path: polygon(
+    0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px,
+    100% calc(100% - 8px), calc(100% - 8px) 100%,
+    8px 100%, 0 calc(100% - 8px)
+  );
+}
+.reveal-label {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--cyber-cyan);
+  font-size: 11px;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+.reveal-stock {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 32px;
+  color: var(--cyber-cyan);
+  letter-spacing: 3px;
+  text-shadow: 0 0 12px var(--cyber-cyan), 0 0 24px rgba(0, 255, 240, 0.4);
+  animation: reveal 0.6s ease-out;
+}
+.reveal-range {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 2px;
+  margin-top: 8px;
+}
+@keyframes reveal {
+  0% { opacity: 0; transform: scale(0.8); filter: blur(8px); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+.result-stats {
+  margin: 20px 0;
+  font-family: 'Share Tech Mono', monospace;
+}
+.rs-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(176, 38, 255, 0.2);
+}
+.rs-row.big-row { padding: 12px 0; }
+.rs-label {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+.rs-val {
+  color: var(--cyber-cyan);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-shadow: 0 0 6px var(--cyber-cyan);
+}
+.rs-val.big-val { font-size: 22px; font-family: 'Orbitron', sans-serif; }
+.rs-val.good { color: var(--sell); text-shadow: 0 0 8px var(--sell); }
+.rs-val.bad { color: var(--buy); text-shadow: 0 0 8px var(--buy); }
+
+.verdict {
+  text-align: center;
+  margin: 16px 0 22px;
+  padding: 10px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 3px;
+}
+.verdict.win { color: var(--cyber-cyan); text-shadow: 0 0 10px var(--cyber-cyan); }
+.verdict.lose { color: var(--cyber-magenta); text-shadow: 0 0 10px var(--cyber-magenta); }

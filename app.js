@@ -151,9 +151,8 @@ function fmt(n, d = 0) {
 
 function updatePanel() {
   const price = nowPrice();
-  document.getElementById("stockLabel").textContent =
-    `${state.stock.id} ${state.stock.name}`;
-  document.getElementById("dateLabel").textContent = nowDate();
+  document.getElementById("stockLabel").textContent = "??? ???";
+  document.getElementById("dateLabel").textContent = "????-??-??";
   document.getElementById("roundsLeft").textContent =
     TOTAL_ROUNDS - state.trades > 0
       ? TOTAL_ROUNDS - (state.cursor - state.startIdx)
@@ -262,13 +261,11 @@ function finish() {
   if (state.over) return;
   state.over = true;
   const price = nowPrice();
-  // force-close position for final equity
   const equity = state.cash + state.pos * price;
   const roi = ((equity - INITIAL_CASH) / INITIAL_CASH) * 100;
-
-  // benchmark: buy & hold from start to now
   const startPrice = state.prices[state.startIdx].c;
   const bench = ((price - startPrice) / startPrice) * 100;
+  const alpha = roi - bench;
 
   saveResult({
     date: new Date().toISOString(),
@@ -280,17 +277,53 @@ function finish() {
     bench: +bench.toFixed(2),
   });
 
-  setTimeout(() => {
-    alert(
-      `遊戲結束\n\n` +
-        `${state.stock.id} ${state.stock.name}\n` +
-        `${state.prices[state.startIdx].t} → ${nowDate()}\n` +
-        `\n總資產 ${fmt(equity, 0)}\n` +
-        `報酬率 ${roi >= 0 ? "+" : ""}${roi.toFixed(2)}%\n` +
-        `大盤對照(買入持有) ${bench >= 0 ? "+" : ""}${bench.toFixed(2)}%\n` +
-        `超越 ${(roi - bench >= 0 ? "+" : "")}${(roi - bench).toFixed(2)}%`
-    );
-  }, 100);
+  showResult({ equity, roi, bench, alpha });
+}
+
+function showResult({ equity, roi, bench, alpha }) {
+  const set = (id, text, cls) => {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    if (cls !== undefined) {
+      el.classList.remove("good", "bad");
+      if (cls) el.classList.add(cls);
+    }
+  };
+
+  const sign = (n) => (n >= 0 ? "+" : "");
+  const cls = (n) => (n > 0 ? "good" : n < 0 ? "bad" : null);
+
+  document.getElementById("revealStock").textContent =
+    `${state.stock.id} · ${state.stock.name}`;
+  document.getElementById("revealRange").textContent =
+    `${state.prices[state.startIdx].t}  →  ${nowDate()}`;
+
+  set("rsEquity", fmt(equity, 0));
+  set("rsRoi", `${sign(roi)}${roi.toFixed(2)}%`, cls(roi));
+  set("rsBench", `${sign(bench)}${bench.toFixed(2)}%`, cls(bench));
+  set("rsAlpha", `${sign(alpha)}${alpha.toFixed(2)}%`, cls(alpha));
+  set("rsTrades", state.trades);
+
+  const v = document.getElementById("resultVerdict");
+  v.classList.remove("win", "lose");
+  if (alpha > 0) {
+    v.textContent = "✦ 你擊敗了市場 ✦";
+    v.classList.add("win");
+  } else if (alpha < 0) {
+    v.textContent = "× 輸給買進持有 ×";
+    v.classList.add("lose");
+  } else {
+    v.textContent = "━ 與市場打平 ━";
+  }
+
+  document.getElementById("game-screen").classList.add("hidden");
+  document.getElementById("result-screen").classList.remove("hidden");
+}
+
+function endGameEarly() {
+  if (state.over) return;
+  if (!confirm("確定要提早結束本局?")) return;
+  finish();
 }
 
 // ================= Player / localStorage =================
@@ -355,6 +388,7 @@ function renderLogin() {
 
 async function enterGame() {
   document.getElementById("login-screen").classList.add("hidden");
+  document.getElementById("result-screen").classList.add("hidden");
   document.getElementById("game-screen").classList.remove("hidden");
   document.getElementById("whoLabel").textContent = getNick();
   if (!chart) {
@@ -402,12 +436,23 @@ async function newGame() {
 document.getElementById("btnBuy").addEventListener("click", buy);
 document.getElementById("btnSell").addEventListener("click", sell);
 document.getElementById("btnNext").addEventListener("click", nextDay);
-document.getElementById("btnNew").addEventListener("click", newGame);
+document.getElementById("btnNew").addEventListener("click", () => newGame());
+document.getElementById("btnEnd").addEventListener("click", endGameEarly);
 document.getElementById("btnBack").addEventListener("click", () => {
   if (state.pos > 0 && !state.over) {
     if (!confirm("你還有持股，確定要登出?")) return;
   }
   logout();
+});
+document.getElementById("btnAgain").addEventListener("click", () => {
+  document.getElementById("result-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.remove("hidden");
+  newGame();
+});
+document.getElementById("btnBackLogin").addEventListener("click", () => {
+  document.getElementById("result-screen").classList.add("hidden");
+  document.getElementById("login-screen").classList.remove("hidden");
+  renderLogin();
 });
 
 document.getElementById("btnLogin").addEventListener("click", () => {
@@ -433,6 +478,7 @@ document.getElementById("btnLogout").addEventListener("click", () => {
 document.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT") return;
   if (document.getElementById("game-screen").classList.contains("hidden")) return;
+  if (state.over) return;
   if (e.code === "Space") {
     e.preventDefault();
     nextDay();
