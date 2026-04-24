@@ -104,7 +104,17 @@ function setupChart() {
   bbUpper = chart.addLineSeries({ color: "rgba(180,180,180,0.5)", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
   bbLower = chart.addLineSeries({ color: "rgba(180,180,180,0.5)", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
 
-  window.addEventListener("resize", () => chart.applyOptions({}));
+  const resizeChart = () => {
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      chart.resize(rect.width, rect.height);
+    }
+  };
+  window.addEventListener("resize", resizeChart);
+  if (window.ResizeObserver) {
+    new ResizeObserver(resizeChart).observe(el);
+  }
+  setTimeout(resizeChart, 50);
 }
 
 function renderChart() {
