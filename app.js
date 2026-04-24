@@ -158,11 +158,25 @@ function updatePanel() {
       ? TOTAL_ROUNDS - (state.cursor - state.startIdx)
       : 0;
   document.getElementById("priceNow").textContent = fmt(price, 2);
-  document.getElementById("pos").textContent = fmt(state.pos);
+  const posEl = document.getElementById("pos");
+  if (state.pos > 0) {
+    posEl.textContent = `多 ${fmt(state.pos)}`;
+    posEl.className = "pos-pnl";
+  } else if (state.pos < 0) {
+    posEl.textContent = `空 ${fmt(-state.pos)}`;
+    posEl.className = "neg-pnl";
+  } else {
+    posEl.textContent = "—";
+    posEl.className = "";
+  }
   document.getElementById("avg").textContent =
-    state.pos > 0 ? fmt(state.avg, 2) : "—";
+    state.pos !== 0 ? fmt(state.avg, 2) : "—";
   const unreal =
-    state.pos > 0 ? (price - state.avg) * state.pos : 0;
+    state.pos > 0
+      ? (price - state.avg) * state.pos
+      : state.pos < 0
+      ? (state.avg - price) * -state.pos
+      : 0;
   const unrealEl = document.getElementById("unreal");
   unrealEl.textContent = fmt(unreal, 0);
   unrealEl.className = unreal > 0 ? "pos-pnl" : unreal < 0 ? "neg-pnl" : "";
@@ -194,22 +208,55 @@ function renderLog() {
 
 function buy() {
   if (state.over) return;
-  const qty = +document.getElementById("qty").value;
+  let qty = +document.getElementById("qty").value;
   if (qty <= 0) return;
   const price = nowPrice();
-  const cost = qty * price;
-  const fee = Math.max(20, Math.floor(cost * FEE_RATE));
-  const total = cost + fee;
-  if (total > state.cash) {
-    alert("現金不足");
-    return;
+  let totalPnl = 0;
+  let coveredProfit = null;
+
+  // Phase 1: cover existing short
+  if (state.pos < 0) {
+    const qtyCover = Math.min(qty, -state.pos);
+    const gross = price * qtyCover;
+    const fee = Math.max(20, Math.floor(gross * FEE_RATE));
+    if (state.cash < gross + fee) {
+      alert("現金不足");
+      window.SFX && SFX.error();
+      return;
+    }
+    const pnl = (state.avg - price) * qtyCover - fee;
+    state.cash -= gross + fee;
+    state.pos += qtyCover;
+    state.realized += pnl;
+    totalPnl += pnl;
+    coveredProfit = pnl >= 0;
+    qty -= qtyCover;
+    if (state.pos === 0) state.avg = 0;
   }
-  const newAvg = (state.avg * state.pos + cost) / (state.pos + qty);
-  state.pos += qty;
-  state.avg = newAvg;
-  state.cash -= total;
+
+  // Phase 2: open/add long
+  if (qty > 0) {
+    const gross = price * qty;
+    const fee = Math.max(20, Math.floor(gross * FEE_RATE));
+    if (state.cash < gross + fee) {
+      alert(state.pos > 0 ? "現金不足加碼" : "現金不足");
+      window.SFX && SFX.error();
+      if (coveredProfit === null) return;
+    } else {
+      const prevPos = Math.max(state.pos, 0);
+      state.avg = (state.avg * prevPos + gross) / (prevPos + qty);
+      state.pos += qty;
+      state.cash -= gross + fee;
+    }
+  }
+
   state.trades++;
-  state.log.push({ t: nowDate(), side: "buy", qty, p: price });
+  state.log.push({
+    t: nowDate(), side: "buy",
+    qty: +document.getElementById("qty").value,
+    p: price, pnl: totalPnl || undefined,
+  });
+  window.SFX && (coveredProfit !== null ? SFX.sell(coveredProfit) : SFX.buy());
   updatePanel();
   checkEnd();
 }
@@ -218,23 +265,53 @@ function sell() {
   if (state.over) return;
   let qty = +document.getElementById("qty").value;
   if (qty <= 0) return;
-  if (qty > state.pos) qty = state.pos;
-  if (qty <= 0) {
-    alert("無持股");
-    return;
-  }
   const price = nowPrice();
-  const gross = qty * price;
-  const fee = Math.max(20, Math.floor(gross * FEE_RATE));
-  const tax = Math.floor(gross * TAX_RATE);
-  const net = gross - fee - tax;
-  const pnl = (price - state.avg) * qty - fee - tax;
-  state.pos -= qty;
-  if (state.pos === 0) state.avg = 0;
-  state.cash += net;
-  state.realized += pnl;
+  let totalPnl = 0;
+  let closedProfit = null;
+
+  // Phase 1: close existing long
+  if (state.pos > 0) {
+    const qtyClose = Math.min(qty, state.pos);
+    const gross = price * qtyClose;
+    const fee = Math.max(20, Math.floor(gross * FEE_RATE));
+    const tax = Math.floor(gross * TAX_RATE);
+    const pnl = (price - state.avg) * qtyClose - fee - tax;
+    state.cash += gross - fee - tax;
+    state.pos -= qtyClose;
+    state.realized += pnl;
+    totalPnl += pnl;
+    closedProfit = pnl >= 0;
+    qty -= qtyClose;
+    if (state.pos === 0) state.avg = 0;
+  }
+
+  // Phase 2: open/add short (gets proceeds, acts as collateral)
+  if (qty > 0) {
+    const gross = price * qty;
+    const fee = Math.max(20, Math.floor(gross * FEE_RATE));
+    const tax = Math.floor(gross * TAX_RATE);
+    // soft margin check: total short exposure <= current equity × 2
+    const newShortAbs = -state.pos + qty;
+    const equity = state.cash + state.pos * price;
+    if (newShortAbs * price > equity * 2) {
+      alert("保證金不足 (空單最多 2 倍槓桿)");
+      window.SFX && SFX.error();
+      if (closedProfit === null) return;
+    } else {
+      const prevShort = Math.max(-state.pos, 0);
+      state.avg = (state.avg * prevShort + gross) / (prevShort + qty);
+      state.pos -= qty;
+      state.cash += gross - fee - tax;
+    }
+  }
+
   state.trades++;
-  state.log.push({ t: nowDate(), side: "sell", qty, p: price, pnl });
+  state.log.push({
+    t: nowDate(), side: "sell",
+    qty: +document.getElementById("qty").value,
+    p: price, pnl: totalPnl || undefined,
+  });
+  window.SFX && (closedProfit !== null ? SFX.sell(closedProfit) : SFX.buy());
   updatePanel();
   checkEnd();
 }
@@ -248,6 +325,7 @@ function nextDay() {
   state.cursor++;
   appendBar();
   updatePanel();
+  window.SFX && SFX.tick();
   if (state.cursor - state.startIdx >= TOTAL_ROUNDS) {
     finish();
   }
@@ -318,6 +396,7 @@ function showResult({ equity, roi, bench, alpha }) {
 
   document.getElementById("game-screen").classList.add("hidden");
   document.getElementById("result-screen").classList.remove("hidden");
+  window.SFX && (alpha > 0 ? SFX.win() : SFX.lose());
 }
 
 function endGameEarly() {
@@ -387,15 +466,25 @@ function renderLogin() {
 }
 
 async function enterGame() {
+  window.SFX && SFX.login();
   document.getElementById("login-screen").classList.add("hidden");
   document.getElementById("result-screen").classList.add("hidden");
   document.getElementById("game-screen").classList.remove("hidden");
   document.getElementById("whoLabel").textContent = getNick();
+  syncMuteBtn();
   if (!chart) {
     setupChart();
     await loadCatalog();
   }
   await newGame();
+}
+
+function syncMuteBtn() {
+  const btn = document.getElementById("btnMute");
+  if (!btn) return;
+  const m = window.soundMute && window.soundMute.isMuted();
+  btn.textContent = m ? "🔇" : "🔊";
+  btn.title = m ? "取消靜音" : "靜音";
 }
 
 function logout() {
@@ -438,6 +527,12 @@ document.getElementById("btnSell").addEventListener("click", sell);
 document.getElementById("btnNext").addEventListener("click", nextDay);
 document.getElementById("btnNew").addEventListener("click", () => newGame());
 document.getElementById("btnEnd").addEventListener("click", endGameEarly);
+document.getElementById("btnMute").addEventListener("click", () => {
+  const m = !window.soundMute.isMuted();
+  window.soundMute.setMuted(m);
+  syncMuteBtn();
+  if (!m) window.SFX && SFX.tick();
+});
 document.getElementById("btnBack").addEventListener("click", () => {
   if (state.pos > 0 && !state.over) {
     if (!confirm("你還有持股，確定要登出?")) return;

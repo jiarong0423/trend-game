@@ -488,3 +488,71 @@ main {
 }
 .verdict.win { color: var(--cyber-cyan); text-shadow: 0 0 10px var(--cyber-cyan); }
 .verdict.lose { color: var(--cyber-magenta); text-shadow: 0 0 10px var(--cyber-magenta); }
+
+/* ========== RESPONSIVE (直式 / 手機) ========== */
+@media (max-aspect-ratio: 1/1), (max-width: 780px) {
+  /* 登入卡縮小 */
+  .cyber-card {
+    min-width: auto;
+    width: calc(100vw - 40px);
+    max-width: 420px;
+    padding: 28px 22px;
+  }
+  .cyber-glitch { font-size: 28px; letter-spacing: 2px; }
+  .cyber-sub { font-size: 11px; margin-bottom: 22px; }
+  .neon-cyan { font-size: 22px; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .corner { width: 28px; height: 28px; }
+
+  /* 結算卡 */
+  .result-card { min-width: auto; max-width: 420px; }
+  .reveal-stock { font-size: 22px; letter-spacing: 2px; }
+  .rs-val.big-val { font-size: 18px; }
+  .verdict { font-size: 14px; letter-spacing: 2px; }
+
+  /* 遊戲主畫面改直式 */
+  main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 55vh auto;
+    height: calc(100vh - 90px);
+  }
+  .panel {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    padding: 12px;
+    max-height: calc(45vh - 40px);
+  }
+
+  /* header wrap */
+  header {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 8px 12px;
+  }
+  header h1 { font-size: 14px; }
+  .meta { font-size: 11px; gap: 10px; flex-wrap: wrap; width: 100%; order: 3; }
+  .controls {
+    margin-left: auto;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .controls button {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .who { font-size: 11px; margin-right: 4px; }
+
+  /* 交易按鈕大一點好按 */
+  .row.buttons button { padding: 14px; font-size: 15px; }
+  .big { font-size: 16px; }
+
+  /* 交易紀錄限高 */
+  #log { max-height: 100px; }
+}
+
+/* 超小螢幕 (手機直式 < 420px) */
+@media (max-width: 420px) {
+  .cyber-glitch { font-size: 22px; }
+  header h1 { display: none; }  /* 藏 logo 省空間 */
+  main { grid-template-rows: 50vh auto; }
+}
